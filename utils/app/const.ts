@@ -26,4 +26,4 @@ export const AZURE_OPENAI_API_EMBEDDINGS_DEPLOYMENT_NAME = process.env.AZURE_OPE
 
 export const AZURE_OPENAI_API_VERSION = process.env.AZURE_OPENAI_API_VERSION;
 
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://10.20.43.179:8080';

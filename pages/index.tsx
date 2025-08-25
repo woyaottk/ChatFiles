@@ -536,7 +536,26 @@ const Home: React.FC<HomeProps> = ({serverSideApiKeyIsSet}) => {
             const cleanedConversationHistory = cleanConversationHistory(
                 parsedConversationHistory,
             );
-            setConversations(cleanedConversationHistory);
+            
+            // 为所有对话中的AI助手消息添加代码块标记
+            const processedConversationHistory = cleanedConversationHistory.map(conversation => {
+                const processedMessages = conversation.messages.map(message => {
+                    if (message.role === 'assistant' && !message.content.startsWith('```')) {
+                        return {
+                            ...message,
+                            content: '```\n' + message.content + '\n```'
+                        };
+                    }
+                    return message;
+                });
+                
+                return {
+                    ...conversation,
+                    messages: processedMessages
+                };
+            });
+            
+            setConversations(processedConversationHistory);
         }
 
         const selectedConversation = localStorage.getItem('selectedConversation');
@@ -546,7 +565,24 @@ const Home: React.FC<HomeProps> = ({serverSideApiKeyIsSet}) => {
             const cleanedSelectedConversation = cleanSelectedConversation(
                 parsedSelectedConversation,
             );
-            setSelectedConversation(cleanedSelectedConversation);
+            
+            // 为AI助手的消息添加代码块标记
+            const processedMessages = cleanedSelectedConversation.messages.map(message => {
+                if (message.role === 'assistant' && !message.content.startsWith('```')) {
+                    return {
+                        ...message,
+                        content: '```\n' + message.content + '\n```'
+                    };
+                }
+                return message;
+            });
+            
+            const processedSelectedConversation = {
+                ...cleanedSelectedConversation,
+                messages: processedMessages
+            };
+            
+            setSelectedConversation(processedSelectedConversation);
         } else {
             setSelectedConversation({
                 id: 1,
