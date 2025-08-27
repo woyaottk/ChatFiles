@@ -8,6 +8,7 @@ import remarkMath from 'remark-math';
 import { CodeBlock } from '../Markdown/CodeBlock';
 import { MemoizedReactMarkdown } from '../Markdown/MemoizedReactMarkdown';
 import { CopyButton } from './CopyButton';
+import { PlainTextMessage } from './PlainTextMessage';
 
 interface Props {
   message: Message;
@@ -24,6 +25,25 @@ export const ChatMessage: FC<Props> = memo(
     const [messagedCopied, setMessageCopied] = useState(false);
 
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+    // 检测是否为纯文本（不包含Markdown语法）
+    const isPlainText = (content: string): boolean => {
+      // 检查是否包含常见的Markdown语法
+      const markdownPatterns = [
+        /^#+\s/, // 标题
+        /\*\*.*?\*\*/, // 粗体
+        /\*.*?\*/, // 斜体
+        /`.*?`/, // 行内代码
+        /^```/, // 代码块
+        /^-\s/, // 无序列表
+        /^\d+\.\s/, // 有序列表
+        /\[.*?\]\(.*?\)/, // 链接
+        /^>\s/, // 引用
+        /^\|.*\|$/, // 表格
+      ];
+      
+      return !markdownPatterns.some(pattern => pattern.test(content));
+    };
 
     const toggleEditing = () => {
       setIsEditing(!isEditing);
@@ -128,8 +148,81 @@ export const ChatMessage: FC<Props> = memo(
                     </div>
                   </div>
                 ) : (
+                  isPlainText(message.content) ? (
+                    <PlainTextMessage content={message.content} />
+                  ) : (
+                    <MemoizedReactMarkdown
+                      className="prose dark:prose-invert whitespace-pre-wrap"
+                      remarkPlugins={[remarkGfm, remarkMath]}
+                      rehypePlugins={[rehypeMathjax]}
+                      components={{
+                        code({ node, inline, className, children, ...props }) {
+                          const match = /language-(\w+)/.exec(className || '');
+
+                          return !inline && match ? (
+                            <CodeBlock
+                              key={Math.random()}
+                              language={match[1]}
+                              value={String(children).replace(/\n$/, '')}
+                              {...props}
+                            />
+                          ) : (
+                            <code className={className} {...props}>
+                              {children}
+                            </code>
+                          );
+                        },
+                        table({ children }) {
+                          return (
+                            <table className="border-collapse border border-black py-1 px-3 dark:border-white">
+                              {children}
+                            </table>
+                          );
+                        },
+                        th({ children }) {
+                          return (
+                            <th className="break-words border border-black bg-gray-500 py-1 px-3 text-white dark:border-white">
+                              {children}
+                            </th>
+                          );
+                        },
+                        td({ children }) {
+                          return (
+                            <td className="break-words border border-black py-1 px-3 dark:border-white">
+                              {children}
+                            </td>
+                          );
+                        },
+                      }}
+                    >
+                      {message.content}
+                    </MemoizedReactMarkdown>
+                  )
+                )}
+
+                {(isHovering || window.innerWidth < 640) && !isEditing && (
+                  <button
+                    className={`absolute ${
+                      window.innerWidth < 640
+                        ? 'right-3 bottom-1'
+                        : 'right-[-20px] top-[26px]'
+                    }`}
+                  >
+                    <IconEdit
+                      size={20}
+                      className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                      onClick={toggleEditing}
+                    />
+                  </button>
+                )}
+              </div>
+            ) : (
+              <>
+                {isPlainText(message.content) ? (
+                  <PlainTextMessage content={message.content} />
+                ) : (
                   <MemoizedReactMarkdown
-                    className="prose dark:prose-invert"
+                    className="prose dark:prose-invert whitespace-pre-wrap"
                     remarkPlugins={[remarkGfm, remarkMath]}
                     rehypePlugins={[rehypeMathjax]}
                     components={{
@@ -175,71 +268,6 @@ export const ChatMessage: FC<Props> = memo(
                     {message.content}
                   </MemoizedReactMarkdown>
                 )}
-
-                {(isHovering || window.innerWidth < 640) && !isEditing && (
-                  <button
-                    className={`absolute ${
-                      window.innerWidth < 640
-                        ? 'right-3 bottom-1'
-                        : 'right-[-20px] top-[26px]'
-                    }`}
-                  >
-                    <IconEdit
-                      size={20}
-                      className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
-                      onClick={toggleEditing}
-                    />
-                  </button>
-                )}
-              </div>
-            ) : (
-              <>
-                <MemoizedReactMarkdown
-                  className="prose dark:prose-invert"
-                  remarkPlugins={[remarkGfm, remarkMath]}
-                  rehypePlugins={[rehypeMathjax]}
-                  components={{
-                    code({ node, inline, className, children, ...props }) {
-                      const match = /language-(\w+)/.exec(className || '');
-
-                      return !inline && match ? (
-                        <CodeBlock
-                          key={Math.random()}
-                          language={match[1]}
-                          value={String(children).replace(/\n$/, '')}
-                          {...props}
-                        />
-                      ) : (
-                        <code className={className} {...props}>
-                          {children}
-                        </code>
-                      );
-                    },
-                    table({ children }) {
-                      return (
-                        <table className="border-collapse border border-black py-1 px-3 dark:border-white">
-                          {children}
-                        </table>
-                      );
-                    },
-                    th({ children }) {
-                      return (
-                        <th className="break-words border border-black bg-gray-500 py-1 px-3 text-white dark:border-white">
-                          {children}
-                        </th>
-                      );
-                    },
-                    td({ children }) {
-                      return (
-                        <td className="break-words border border-black py-1 px-3 dark:border-white">
-                          {children}
-                        </td>
-                      );
-                    },
-                  }}
-                >
-                  {message.content}
-                </MemoizedReactMarkdown>
 
                 {(isHovering || window.innerWidth < 640) && (
                   <CopyButton

@@ -203,17 +203,16 @@ const Home: React.FC<HomeProps> = ({serverSideApiKeyIsSet}) => {
                                 console.log('原始text:', JSON.stringify(data.text));
                                 // 处理转义的换行符
                                 const processedText = data.text.replace(/\\n/g, '\n');
-                                // 将纯文本转换为Markdown代码块格式
-                                // 只在第一个片段添加开始标记，在最后一个片段添加结束标记
-                                const markdownText = processedText;
-                                console.log('处理后text:', JSON.stringify(markdownText));
-                                text += markdownText;
+                                // 直接使用纯文本，不转换为Markdown格式
+                                const plainText = processedText;
+                                console.log('处理后text:', JSON.stringify(plainText));
+                                text += plainText;
                                 
                                 if (isFirst) {
                                     isFirst = false;
                                     const updatedMessages: Message[] = [
                                         ...updatedConversation.messages,
-                                        {role: 'assistant', content: '```\n' + text},
+                                        {role: 'assistant', content: text},
                                     ];
 
                                     updatedConversation = {
@@ -228,7 +227,7 @@ const Home: React.FC<HomeProps> = ({serverSideApiKeyIsSet}) => {
                                             if (index === updatedConversation.messages.length - 1) {
                                                 return {
                                                     ...message,
-                                                    content: '```\n' + text,
+                                                    content: text,
                                                 };
                                             }
 
@@ -252,8 +251,8 @@ const Home: React.FC<HomeProps> = ({serverSideApiKeyIsSet}) => {
             }
             await reader.cancel();
 
-            // 在流式响应结束时添加代码块结束标记
-            const finalText = text + '\n```';
+            // 流式响应结束，使用最终文本
+            const finalText = text;
             const finalUpdatedMessages: Message[] = updatedConversation.messages.map(
                 (message, index) => {
                     if (index === updatedConversation.messages.length - 1) {
