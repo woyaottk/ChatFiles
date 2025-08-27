@@ -39,6 +39,7 @@ open browser with http://localhost:3000
 ```shell
 npm install
 npm run dev
+cloudflared tunnel --url http://localhost:3000
 ```
 
 ### How to deploy on vercel
